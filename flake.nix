@@ -114,6 +114,8 @@
           postPatch = ''
             rm -f .bazelversion
             sed -i '/downloader_config/d' .bazelrc
+            sed -i '/--@llvm-project\/\/third-party:llvm_enable_zstd/d' .bazelrc
+            sed -i '/--@or-tools\/\/ortools\/linear_solver:/d' .bazelrc
           '';
 
           fetchAttrs = {
