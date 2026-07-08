@@ -2,7 +2,7 @@
   description = "google/xls (Accelerated HW Synthesis) - build from source, fetch latest release, DSLX LSP";
 
   nixConfig = {
-    extra-substituters = [ "https://omar238sh.org" ];
+    extra-substituters = [ "https://omar238sh.cachix.org" ];
     extra-trusted-public-keys = [
       "omar238sh.cachix.org-1:QOVqP8RL66i+X8zvEM4pBlOZaoRoNzUt1hFYSvCgopI="
     ];
