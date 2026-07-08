@@ -12,8 +12,6 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    env:
-      CACHIX_CACHE_NAME: omar238sh
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -27,18 +25,19 @@ jobs:
       - name: Set up Cachix
         uses: cachix/cachix-action@v15
         with:
-          # Keep this in sync with flake.nix nixConfig.extra-substituters.
-          name: "omar238sh"
+          # Replace with the cache name you created on cachix.org
+          # (same name used in flake.nix nixConfig.extra-substituters).
+          name: omar238sh
           authToken: "${{ secrets.CACHIX_AUTH_TOKEN }}"
 
       - name: Build default package (dslx-lsp)
-        run: nix build .#dslx-lsp -L
+        run: nix build .#dslx-lsp -L --accept-flake-config
 
       - name: Build fetch-latest-release app
-        run: nix build .#fetch-latest-release -L
+        run: nix build .#fetch-latest-release -L --accept-flake-config
 
       - name: Build dev shell
-        run: nix build .#devShells.x86_64-linux.default -L
+        run: nix build .#devShells.x86_64-linux.default -L --accept-flake-config
 
       # cachix-action watches the Nix store during the job and pushes any
       # new paths automatically, but pushing the explicit result symlinks

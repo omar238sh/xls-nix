@@ -10,7 +10,7 @@
   # Replace "your-cache-name" below once you have created your cache, then
   # `nix flake lock` / `nix build` will trust it automatically.
   nixConfig = {
-    extra-substituters = [ "https://omar238sh.cachix.org" ];
+    extra-substituters = [ "https://omar238sh.org" ];
     extra-trusted-public-keys = [
       "omar238sh.cachix.org-1:QOVqP8RL66i+X8zvEM4pBlOZaoRoNzUt1hFYSvCgopI="
     ];
@@ -106,12 +106,14 @@
             sha256 = pkgs.lib.fakeSha256; # <-- replace after first run
           };
 
-          buildInputs = [ pkgs.python3 pkgs.zlib ];
+          buildAttrs = {
+            buildInputs = [ pkgs.python3 pkgs.zlib ];
 
-          installPhase = ''
-            mkdir -p $out/bin
-            find bazel-bin -maxdepth 4 -name 'dslx_ls_main' -exec cp {} $out/bin/dslx_ls \;
-          '';
+            installPhase = ''
+              mkdir -p $out/bin
+              find bazel-bin -maxdepth 4 -name 'dslx_ls_main' -exec cp {} $out/bin/dslx_ls \;
+            '';
+          };
 
           meta = with pkgs.lib; {
             description = "DSLX language server built from google/xls source";
