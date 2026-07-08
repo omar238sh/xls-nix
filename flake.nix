@@ -1,14 +1,6 @@
 {
   description = "google/xls (Accelerated HW Synthesis) - build from source, fetch latest release, DSLX LSP";
 
-  # Cachix binary cache: after you build packages locally, push them so that
-  # CI / other machines (and you, next time) pull the built store paths
-  # instead of re-running Bazel from scratch.
-  #   1. cachix create <your-cache-name>          (once, on cachix.org)
-  #   2. cachix use <your-cache-name>              (adds it to nix.conf)
-  #   3. nix build .# && cachix push <your-cache-name> ./result
-  # Replace "your-cache-name" below once you have created your cache, then
-  # `nix flake lock` / `nix build` will trust it automatically.
   nixConfig = {
     extra-substituters = [ "https://omar238sh.org" ];
     extra-trusted-public-keys = [
@@ -20,13 +12,6 @@
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     flake-utils.url = "github:numtide/flake-utils";
 
-    # Tracks the default branch of google/xls.
-    # Run `nix flake update xls-src`
-    # (or `nix flake update`) whenever you want to bump to the latest commit
-    # — this is the "always latest" mechanism for the from-source build,
-    # since flakes require a locked, content-addressed input for reproducible
-    # evaluation (a truly dynamic "always fetch whatever is newest right now"
-    # source cannot be expressed in a pure flake).
     xls-src = {
       url = "github:google/xls";
       flake = false;
@@ -39,32 +24,14 @@
         pkgs = import nixpkgs { inherit system; };
 
         # -----------------------------------------------------------------
-        # Option B: build from source. We tried packaging this as a fully
-        # hermetic `buildBazelPackage` derivation (fixed-output fetch phase
-        # + sandboxed offline build), but hit a wall: xls's MODULE.bazel
-        # graph genuinely requires Bazel 8 semantics (repo-name validation,
-        # rules_cc/rules_hdl versions), while `buildBazelPackage` in the
-        # current nixpkgs only supports `bazel_7` (bazel_8 doesn't yet
-        # accept the `enableNixHacks` override buildBazelPackage requires).
-        # Forcing bazel_7 against a Bazel-8-targeted tree surfaced a new
-        # incompatibility every step (7zip repo-name rule, rules_cc.bzl
-        # load errors, ...).
-        #
-        # Fix: build with real bazel_8 inside a *single fixed-output
-        # derivation* (network allowed for the whole build, not just a
-        # separate fetch phase, because we pin `outputHash` below). This
-        # sidesteps buildBazelPackage's bazel_7-only override entirely,
-        # and — unlike the earlier script version — the result IS a real
-        # Nix store path: cacheable via Cachix and consumable from other
-        # flakes as `packages.dslx-lsp`.
+        # Option B: build from source.
         # -----------------------------------------------------------------
-
         xlsDslxLsp = pkgs.stdenv.mkDerivation {
           pname = "xls-dslx-lsp";
           version = "unstable-${xls-src.shortRev or "dirty"}";
           src = xls-src;
 
-          # ADDED: pkgs.xz, pkgs.unzip, pkgs.patch
+          # تم إضافة xz و unzip و patch هنا لحل مشكلة استخراج حزم Bazel الاعتمادية
           nativeBuildInputs = [ 
             pkgs.bazel_8 
             pkgs.git 
@@ -87,6 +54,8 @@
             export HOME="$TMPDIR"
             export SSL_CERT_FILE="${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt"
             export GIT_SSL_CAINFO="$SSL_CERT_FILE"
+            
+            # ترتيب صحيح: خيار التخزين --output_user_root يأتي قبل أمر build
             bazel --output_user_root="$TMPDIR/bazel_output" build -c opt //xls/dslx/lsp:dslx_ls
             runHook postBuild
           '';
@@ -100,7 +69,7 @@
 
           outputHashMode = "recursive";
           outputHashAlgo = "sha256";
-          outputHash = pkgs.lib.fakeSha256; # <-- replace after first run
+          outputHash = pkgs.lib.fakeSha256; # <-- سيفشل أول بناء ويطبع الهاش الصحيح لمخرجات بازل، قم باستبداله هنا.
 
           meta = with pkgs.lib; {
             description = "DSLX language server built from google/xls source";
@@ -109,24 +78,13 @@
             platforms = [ "x86_64-linux" ];
           };
         };
-        
+
         # -----------------------------------------------------------------
-        # A real, consumable package for the prebuilt release tools
-        # (interpreter_main, ir_converter_main, opt_main, codegen_main,
-        # proto_to_dslx_main): unlike fetch-latest-release below, this is
-        # pinned to a specific tag so it's reproducible and usable as a
-        # normal Nix package from another flake. Bump `xlsToolsVersion` and
-        # update the hash whenever you want a newer release.
+        # Option C: Pinned Release Binaries (xlsTools)
         # -----------------------------------------------------------------
-        # google/xls doesn't use semver-style tags; releases look like
-        # v0.0.0-<commit-count>-g<short-sha> and a new one is cut almost
-        # daily. Check https://github.com/google/xls/releases/latest (or
-        # `curl -s https://api.github.com/repos/google/xls/releases/latest
-        # | grep tag_name`) for a newer tag than the one below.
         xlsToolsVersion = "v0.0.0-10242-g9d8ef0bc6";
 
-        # Fixed-output derivation to purely download and extract the binaries.
-        # This cannot reference other Nix store paths, which resolves the illegal path references error.
+        # اشتقاق ثابت المخرجات (Fixed-output) للتحميل النظيف فقط بدون استدعاء store paths
         xlsToolsSrc = pkgs.stdenv.mkDerivation {
           pname = "xls-tools-src";
           version = xlsToolsVersion;
@@ -162,11 +120,10 @@
 
           outputHashMode = "recursive";
           outputHashAlgo = "sha256";
-          outputHash = "sha256-9WykWXmxOItsaRHWsSkFUO9dK7sT9yd+3iruTqlMZIY="; 
+          outputHash = "sha256-9WykWXmxOItsaRHWsSkFUO9dK7sT9yd+3iruTqlMZIY="; # الهاش الصحيح بعد معالجة الفصل
         };
 
-        # Non-fixed-output derivation that safely runs autoPatchelfHook
-        # because network access is no longer active.
+        # الاشتقاق الفعلي لتطبيق autoPatchelfHook بأمان
         xlsTools = pkgs.stdenv.mkDerivation {
           pname = "xls-tools";
           version = xlsToolsVersion;
@@ -185,7 +142,7 @@
           '';
 
           meta = with pkgs.lib; {
-            description = "Prebuilt google/xls tool binaries (interpreter_main, opt_main, codegen_main, ir_converter_main, proto_to_dslx_main)";
+            description = "Prebuilt google/xls tool binaries";
             homepage = "https://github.com/google/xls";
             license = licenses.asl20;
             platforms = [ "x86_64-linux" ];
@@ -193,13 +150,7 @@
         };
 
         # -----------------------------------------------------------------
-        # Option A: fetch the latest prebuilt release tarball on demand, no
-        # build tools required and no fixed hash to maintain. This stays a
-        # plain script (not a Nix derivation) because "always the latest
-        # GitHub release" is inherently a moving target — the opposite of
-        # what a reproducible package (xlsTools above) can express. Use
-        # this interactively; use `packages.xls-tools` when you need a
-        # pinned, composable package.
+        # Option A: Interactive Script
         # -----------------------------------------------------------------
         fetchLatestRelease = pkgs.writeShellApplication {
           name = "xls-fetch-latest-release";
@@ -244,15 +195,13 @@
           gnumake
           pkg-config
           zlib
-          clang-tools # clangd, for compile_commands.json-based completion
+          clang-tools
         ];
       in
       {
         packages = {
-          # Pinned, reproducible, consumable from other flakes:
-          xls-tools = xlsTools; # interpreter_main, opt_main, codegen_main, ir_converter_main, proto_to_dslx_main
-          dslx-lsp = xlsDslxLsp; # dslx_ls
-          # On-demand scripts (see comments above for why these aren't plain packages):
+          xls-tools = xlsTools;
+          dslx-lsp = xlsDslxLsp;
           fetch-latest-release = fetchLatestRelease;
           default = xlsTools;
         };
@@ -273,12 +222,7 @@
           packages = devShellPkgs ++ [ xlsTools xlsDslxLsp ];
           shellHook = ''
             export PYTHON_BIN_PATH=${pkgs.python3}/bin/python3
-            echo "xls dev shell ready. Source tracked via flake input xls-src (run 'nix flake lock --update-input xls-src' for latest)."
-            echo "interpreter_main / opt_main / codegen_main / ir_converter_main / proto_to_dslx_main and dslx_ls are on PATH."
-            echo "Full source build: bazel test -c opt -- //xls/... -//xls/contrib/xlscc/..."
-            echo "Latest release binaries (script, no fixed version): nix run .#fetch-latest-release"
-            echo "clangd completions (per-target, slower to set up):"
-            echo "  bazel build -c opt //xls/... -k && bazel run //:refresh_compile_commands"
+            echo "xls dev shell ready."
           '';
         };
 
