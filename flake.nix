@@ -10,9 +10,9 @@
   # Replace "your-cache-name" below once you have created your cache, then
   # `nix flake lock` / `nix build` will trust it automatically.
   nixConfig = {
-    extra-substituters = [ "https://your-cache-name.cachix.org" ];
+    extra-substituters = [ "https://omar238sh.cachix.org" ];
     extra-trusted-public-keys = [
-      "your-cache-name.cachix.org-1:REPLACE_WITH_PUBLIC_KEY_FROM_CACHIX"
+      "omar238sh.cachix.org-1:QOVqP8RL66i+X8zvEM4pBlOZaoRoNzUt1hFYSvCgopI="
     ];
   };
 
