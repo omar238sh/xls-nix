@@ -99,7 +99,7 @@
           src = xls-src;
 
           bazel = pkgs.bazel_7;
-          bazelFlags = [ "-c" "opt" ];
+          bazelFlags = [ "-c" "opt" "--noenable_bzlmod" "--enable_workspace" ];
           bazelTargets = [ "//xls/dslx/lsp:dslx_ls_main" ];
 
           # The xls repo pins an exact Bazel version via .bazelversion; the
@@ -109,6 +109,8 @@
           # Also strip --downloader_config from .bazelrc: it's a newer-Bazel
           # option not recognized by bazel_7.6.0, and we don't need it since
           # we're building fully offline after the fetch phase anyway.
+          # We also disable bzlmod because current transitive MODULE deps use
+          # repository names (e.g. "7zip") rejected by bazel_7.
           postPatch = ''
             rm -f .bazelversion
             sed -i '/downloader_config/d' .bazelrc
