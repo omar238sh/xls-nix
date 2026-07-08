@@ -16,12 +16,12 @@
     ];
   };
 
-
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     flake-utils.url = "github:numtide/flake-utils";
 
-    # Tracks the default branch of google/xls. Run `nix flake update xls-src`
+    # Tracks the default branch of google/xls.
+    # Run `nix flake update xls-src`
     # (or `nix flake update`) whenever you want to bump to the latest commit
     # — this is the "always latest" mechanism for the from-source build,
     # since flakes require a locked, content-addressed input for reproducible
@@ -107,7 +107,7 @@
         # -----------------------------------------------------------------
         # A real, consumable package for the prebuilt release tools
         # (interpreter_main, ir_converter_main, opt_main, codegen_main,
-        # proto_to_dslx_main): unlike fetch-latest-release above, this is
+        # proto_to_dslx_main): unlike fetch-latest-release below, this is
         # pinned to a specific tag so it's reproducible and usable as a
         # normal Nix package from another flake. Bump `xlsToolsVersion` and
         # update the hash whenever you want a newer release.
@@ -119,19 +119,15 @@
         # | grep tag_name`) for a newer tag than the one below.
         xlsToolsVersion = "v0.0.0-10242-g9d8ef0bc6";
 
-        xlsTools = pkgs.stdenv.mkDerivation {
-          pname = "xls-tools";
+        # Fixed-output derivation to purely download and extract the binaries.
+        # This cannot reference other Nix store paths, which resolves the illegal path references error.
+        xlsToolsSrc = pkgs.stdenv.mkDerivation {
+          pname = "xls-tools-src";
           version = xlsToolsVersion;
 
           dontUnpack = true;
-          nativeBuildInputs = [ pkgs.curl pkgs.gnutar pkgs.gzip pkgs.gnugrep pkgs.cacert pkgs.autoPatchelfHook ];
-          buildInputs = [ pkgs.stdenv.cc.cc.lib pkgs.zlib ];
+          nativeBuildInputs = [ pkgs.curl pkgs.gnutar pkgs.gzip pkgs.gnugrep pkgs.cacert ];
 
-          # Rather than guess the exact xls-{version}-{os}-{arch}.tar.gz
-          # asset name, ask the GitHub API for this tag's real asset URL
-          # (same approach as fetch-latest-release below, just pinned to
-          # one tag). Network is allowed because this is a fixed-output
-          # derivation (outputHash pins the result).
           buildPhase = ''
             runHook preBuild
             export SSL_CERT_FILE="${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt"
@@ -139,6 +135,7 @@
               -H "Accept: application/vnd.github+json" \
               https://api.github.com/repos/google/xls/releases/tags/${xlsToolsVersion} |
               grep -o 'https://[^"]*/releases/download/[^"]*\.tar\.gz' | head -n1)
+      
             if [ -z "$url" ]; then
               echo "Could not find a release asset for tag ${xlsToolsVersion}" >&2
               exit 1
@@ -152,14 +149,36 @@
 
           installPhase = ''
             runHook preInstall
-            mkdir -p $out/bin
-            find extracted -maxdepth 2 -type f -perm -u+x -exec cp {} $out/bin/ \;
+            mkdir -p $out
+            cp -r extracted/* $out/
             runHook postInstall
           '';
 
           outputHashMode = "recursive";
           outputHashAlgo = "sha256";
-          outputHash = "sha256-+lTCmIE992V8QKN+kQ+aq4fMKInAglOKr93znH4OpHI=";
+          # Note: Replace this with pkgs.lib.fakeSha256 if you update xlsToolsVersion
+          # to get the clean unpatched hash.
+          outputHash = "sha256-K80G9i6XvGvF1lqgE1jP2G9bKzX9wB7PZ3A6C7E8M9I="; 
+        };
+
+        # Non-fixed-output derivation that safely runs autoPatchelfHook
+        # because network access is no longer active.
+        xlsTools = pkgs.stdenv.mkDerivation {
+          pname = "xls-tools";
+          version = xlsToolsVersion;
+
+          src = xlsToolsSrc;
+          dontUnpack = true;
+
+          nativeBuildInputs = [ pkgs.autoPatchelfHook ];
+          buildInputs = [ pkgs.stdenv.cc.cc.lib pkgs.zlib ];
+
+          installPhase = ''
+            runHook preInstall
+            mkdir -p $out/bin
+            find $src -maxdepth 2 -type f -perm -u+x -exec cp {} $out/bin/ \;
+            runHook postInstall
+          '';
 
           meta = with pkgs.lib; {
             description = "Prebuilt google/xls tool binaries (interpreter_main, opt_main, codegen_main, ir_converter_main, proto_to_dslx_main)";
