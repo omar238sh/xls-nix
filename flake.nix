@@ -10,14 +10,15 @@
   # Replace "your-cache-name" below once you have created your cache, then
   # `nix flake lock` / `nix build` will trust it automatically.
   
+
   nixConfig = {
     extra-substituters = [ "https://omar238sh.org" ];
     extra-trusted-public-keys = [
       "omar238sh.cachix.org-1:QOVqP8RL66i+X8zvEM4pBlOZaoRoNzUt1hFYSvCgopI="
     ];
   };
-  
 
+  
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     flake-utils.url = "github:numtide/flake-utils";
@@ -108,8 +109,12 @@
           # wrapper tries to download that exact release, which fails
           # offline inside the Nix sandbox. Drop the pin so it just uses
           # whatever `bazel` (bazel_7 above) is on PATH.
+          # Also strip --downloader_config from .bazelrc: it's a newer-Bazel
+          # option not recognized by bazel_7.6.0, and we don't need it since
+          # we're building fully offline after the fetch phase anyway.
           postPatch = ''
             rm -f .bazelversion
+            sed -i '/downloader_config/d' .bazelrc
           '';
 
           fetchAttrs = {
