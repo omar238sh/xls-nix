@@ -30,14 +30,17 @@ jobs:
           name: omar238sh
           authToken: "${{ secrets.CACHIX_AUTH_TOKEN }}"
 
-      - name: Build default package (dslx-lsp)
-        run: nix build .#dslx-lsp -L --accept-flake-config
-
       - name: Build fetch-latest-release app
         run: nix build .#fetch-latest-release -L --accept-flake-config
 
       - name: Build dev shell
         run: nix build .#devShells.x86_64-linux.default -L --accept-flake-config
+
+      # This runs real Bazel 8 in a script (see flake.nix comments) rather
+      # than a hermetic Nix derivation, so its output is not a Nix store
+      # path and won't be picked up by cachix-action / `cachix push`.
+      - name: Build DSLX LSP from source
+        run: nix run .#build-dslx-lsp --accept-flake-config -- ./dslx-lsp-out
 
       # cachix-action watches the Nix store during the job and pushes any
       # new paths automatically, but pushing the explicit result symlinks
