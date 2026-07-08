@@ -15,8 +15,7 @@
       "omar238sh.cachix.org-1:QOVqP8RL66i+X8zvEM4pBlOZaoRoNzUt1hFYSvCgopI="
     ];
   };
-
-
+  
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     flake-utils.url = "github:numtide/flake-utils";
@@ -117,12 +116,12 @@
             rm -f .bazelversion
             sed -i '/downloader_config/d' .bazelrc || true
 
-            echo "Building //xls/dslx/lsp:dslx_ls_main with Bazel $(bazel --version)..." >&2
-            bazel build -c opt //xls/dslx/lsp:dslx_ls_main
+            echo "Building //xls/dslx/lsp:dslx_ls with Bazel $(bazel --version)..." >&2
+            bazel build -c opt //xls/dslx/lsp:dslx_ls
 
             out_dir="''${1:-./dslx-lsp-out}"
             mkdir -p "$out_dir"
-            find bazel-bin -maxdepth 4 -name 'dslx_ls_main' -exec cp {} "$out_dir/dslx_ls" \;
+            find bazel-bin -maxdepth 4 -name 'dslx_ls' -exec cp {} "$out_dir/dslx_ls" \;
             echo "Built: $out_dir/dslx_ls" >&2
           '';
         };
