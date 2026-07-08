@@ -10,11 +10,8 @@
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-    flake-utils = {
-      url =  "github:numtide/flake-utils";
-      inputs.nixpkgs.follow = "nixpkgs";
-    };
-    xls-src = {
+    flake-utils.url =  "github:numtide/flake-utils";
+          xls-src = {
       url = "github:google/xls";
       flake = false;
     };
