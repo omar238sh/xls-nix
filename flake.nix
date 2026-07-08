@@ -69,7 +69,7 @@
 
           outputHashMode = "recursive";
           outputHashAlgo = "sha256";
-          outputHash = pkgs.lib.fakeSha256; # <-- سيفشل أول بناء ويطبع الهاش الصحيح لمخرجات بازل، قم باستبداله هنا.
+          outputHash = "sha256-LfPR5w1iuzK6Vbb707BRjwz/BhP320DvEETD6q3SrQY="; # <-- سيفشل أول بناء ويطبع الهاش الصحيح لمخرجات بازل، قم باستبداله هنا.
 
           meta = with pkgs.lib; {
             description = "DSLX language server built from google/xls source";
