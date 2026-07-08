@@ -16,6 +16,7 @@
     ];
   };
 
+
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     flake-utils.url = "github:numtide/flake-utils";
@@ -111,26 +112,54 @@
         # normal Nix package from another flake. Bump `xlsToolsVersion` and
         # update the hash whenever you want a newer release.
         # -----------------------------------------------------------------
-        xlsToolsVersion = "v0.0.0-10242-g9d8ef0bc6"; # <-- set to a real tag from https://github.com/google/xls/releases
+        # google/xls doesn't use semver-style tags; releases look like
+        # v0.0.0-<commit-count>-g<short-sha> and a new one is cut almost
+        # daily. Check https://github.com/google/xls/releases/latest (or
+        # `curl -s https://api.github.com/repos/google/xls/releases/latest
+        # | grep tag_name`) for a newer tag than the one below.
+        xlsToolsVersion = "v0.0.0-10242-g9d8ef0bc6";
+
         xlsTools = pkgs.stdenv.mkDerivation {
           pname = "xls-tools";
           version = xlsToolsVersion;
 
-          src = pkgs.fetchurl {
-            url = "https://github.com/google/xls/releases/download/${xlsToolsVersion}/xls-${xlsToolsVersion}-linux-x64.tar.gz";
-            sha256 = pkgs.lib.fakeSha256; # <-- replace after first run
-          };
-
-          sourceRoot = ".";
-          nativeBuildInputs = [ pkgs.autoPatchelfHook ];
+          dontUnpack = true;
+          nativeBuildInputs = [ pkgs.curl pkgs.gnutar pkgs.gzip pkgs.gnugrep pkgs.cacert pkgs.autoPatchelfHook ];
           buildInputs = [ pkgs.stdenv.cc.cc.lib pkgs.zlib ];
+
+          # Rather than guess the exact xls-{version}-{os}-{arch}.tar.gz
+          # asset name, ask the GitHub API for this tag's real asset URL
+          # (same approach as fetch-latest-release below, just pinned to
+          # one tag). Network is allowed because this is a fixed-output
+          # derivation (outputHash pins the result).
+          buildPhase = ''
+            runHook preBuild
+            export SSL_CERT_FILE="${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt"
+            url=$(curl -s -L \
+              -H "Accept: application/vnd.github+json" \
+              https://api.github.com/repos/google/xls/releases/tags/${xlsToolsVersion} |
+              grep -o 'https://[^"]*/releases/download/[^"]*\.tar\.gz' | head -n1)
+            if [ -z "$url" ]; then
+              echo "Could not find a release asset for tag ${xlsToolsVersion}" >&2
+              exit 1
+            fi
+            echo "Downloading: $url" >&2
+            curl -L -o xls.tar.gz "$url"
+            mkdir extracted
+            tar -xzf xls.tar.gz -C extracted
+            runHook postBuild
+          '';
 
           installPhase = ''
             runHook preInstall
             mkdir -p $out/bin
-            find . -maxdepth 2 -type f -perm -u+x -exec cp {} $out/bin/ \;
+            find extracted -maxdepth 2 -type f -perm -u+x -exec cp {} $out/bin/ \;
             runHook postInstall
           '';
+
+          outputHashMode = "recursive";
+          outputHashAlgo = "sha256";
+          outputHash = "sha256-+lTCmIE992V8QKN+kQ+aq4fMKInAglOKr93znH4OpHI=";
 
           meta = with pkgs.lib; {
             description = "Prebuilt google/xls tool binaries (interpreter_main, opt_main, codegen_main, ir_converter_main, proto_to_dslx_main)";
