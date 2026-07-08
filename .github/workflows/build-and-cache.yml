@@ -4,8 +4,6 @@ on:
   push:
     branches: [ main ]
   workflow_dispatch: {}
-  # Optional: rebuild weekly to pick up upstream xls-src changes and
-  # re-populate the cache even without a push to this repo.
   schedule:
     - cron: "0 4 * * 1"
 
@@ -21,12 +19,11 @@ jobs:
         with:
           extra_nix_config: |
             experimental-features = nix-command flakes
+            extra-sandbox-paths = /etc/os-release
 
       - name: Set up Cachix
         uses: cachix/cachix-action@v15
         with:
-          # Replace with the cache name you created on cachix.org
-          # (same name used in flake.nix nixConfig.extra-substituters).
           name: omar238sh
           authToken: "${{ secrets.CACHIX_AUTH_TOKEN }}"
 
@@ -36,13 +33,15 @@ jobs:
       - name: Build dslx-lsp (from source, fixed-output derivation)
         run: nix build .#dslx-lsp -L --accept-flake-config
 
+      - name: Show full Nix build log on failure
+        if: failure()
+        run: |
+          echo "=== Fetching full log for the failed derivation ==="
+          nix log .#dslx-lsp || true
+
       - name: Build dev shell
         run: nix build .#devShells.x86_64-linux.default -L --accept-flake-config
 
-      # cachix-action watches the Nix store during the job and pushes any
-      # new paths automatically, but pushing the explicit result symlinks
-      # here guarantees these three outputs are included even if caching
-      # behavior changes upstream.
       - name: Push results to Cachix
         run: |
           cachix push "omar238sh" ./result || true
