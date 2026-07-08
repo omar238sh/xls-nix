@@ -76,7 +76,8 @@
             export HOME="$TMPDIR"
             export SSL_CERT_FILE="${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt"
             export GIT_SSL_CAINFO="$SSL_CERT_FILE"
-            bazel build -c opt --output_user_root="$TMPDIR/bazel_output" //xls/dslx/lsp:dslx_ls
+            # FIX: Moved --output_user_root BEFORE the build subcommand
+            bazel --output_user_root="$TMPDIR/bazel_output" build -c opt //xls/dslx/lsp:dslx_ls
             runHook postBuild
           '';
 
@@ -156,8 +157,6 @@
 
           outputHashMode = "recursive";
           outputHashAlgo = "sha256";
-          # Note: Replace this with pkgs.lib.fakeSha256 if you update xlsToolsVersion
-          # to get the clean unpatched hash.
           outputHash = "sha256-9WykWXmxOItsaRHWsSkFUO9dK7sT9yd+3iruTqlMZIY="; 
         };
 
