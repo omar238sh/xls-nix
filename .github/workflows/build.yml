@@ -27,7 +27,7 @@ jobs:
         with:
           # Replace with the cache name you created on cachix.org
           # (same name used in flake.nix nixConfig.extra-substituters).
-          name: your-cache-name
+          name: omar238sh
           authToken: "${{ secrets.CACHIX_AUTH_TOKEN }}"
 
       - name: Build default package (dslx-lsp)
