@@ -9,13 +9,14 @@
   #   3. nix build .# && cachix push <your-cache-name> ./result
   # Replace "your-cache-name" below once you have created your cache, then
   # `nix flake lock` / `nix build` will trust it automatically.
+  
   nixConfig = {
     extra-substituters = [ "https://omar238sh.org" ];
     extra-trusted-public-keys = [
       "omar238sh.cachix.org-1:QOVqP8RL66i+X8zvEM4pBlOZaoRoNzUt1hFYSvCgopI="
     ];
   };
-
+  
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
@@ -99,14 +100,14 @@
           version = "unstable-${xls-src.shortRev or "dirty"}";
           src = xls-src;
 
-          bazel = pkgs.bazel_8;
+          bazel = pkgs.bazel_7;
           bazelFlags = [ "-c" "opt" ];
           bazelTargets = [ "//xls/dslx/lsp:dslx_ls_main" ];
 
           # The xls repo pins an exact Bazel version via .bazelversion; the
           # wrapper tries to download that exact release, which fails
           # offline inside the Nix sandbox. Drop the pin so it just uses
-          # whatever `bazel` (bazel_8 above) is on PATH.
+          # whatever `bazel` (bazel_7 above) is on PATH.
           postPatch = ''
             rm -f .bazelversion
           '';
@@ -133,7 +134,7 @@
         };
 
         devShellPkgs = with pkgs; [
-          bazel_8
+          bazel_7
           python3
           python3Packages.pip
           libtinfo
