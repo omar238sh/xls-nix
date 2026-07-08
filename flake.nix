@@ -158,7 +158,7 @@
           outputHashAlgo = "sha256";
           # Note: Replace this with pkgs.lib.fakeSha256 if you update xlsToolsVersion
           # to get the clean unpatched hash.
-          outputHash = "sha256-K80G9i6XvGvF1lqgE1jP2G9bKzX9wB7PZ3A6C7E8M9I="; 
+          outputHash = "sha256-9WykWXmxOItsaRHWsSkFUO9dK7sT9yd+3iruTqlMZIY="; 
         };
 
         # Non-fixed-output derivation that safely runs autoPatchelfHook
