@@ -28,7 +28,7 @@ jobs:
         uses: cachix/cachix-action@v15
         with:
           # Keep this in sync with flake.nix nixConfig.extra-substituters.
-          name: "${{ env.CACHIX_CACHE_NAME }}"
+          name: "$omar238sh"
           authToken: "${{ secrets.CACHIX_AUTH_TOKEN }}"
 
       - name: Build default package (dslx-lsp)
@@ -46,4 +46,4 @@ jobs:
       # behavior changes upstream.
       - name: Push results to Cachix
         run: |
-          cachix push "$CACHIX_CACHE_NAME" ./result || true
+          cachix push "omar238sh" ./result || true
