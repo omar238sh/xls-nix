@@ -45,4 +45,4 @@ jobs:
       # behavior changes upstream.
       - name: Push results to Cachix
         run: |
-          cachix push your-cache-name ./result || true
+          cachix push omar238sh ./result || true
