@@ -111,7 +111,7 @@
         # normal Nix package from another flake. Bump `xlsToolsVersion` and
         # update the hash whenever you want a newer release.
         # -----------------------------------------------------------------
-        xlsToolsVersion = "v0.0.0"; # <-- set to a real tag from https://github.com/google/xls/releases
+        xlsToolsVersion = "v0.0.0-10242-g9d8ef0bc6"; # <-- set to a real tag from https://github.com/google/xls/releases
         xlsTools = pkgs.stdenv.mkDerivation {
           pname = "xls-tools";
           version = xlsToolsVersion;
