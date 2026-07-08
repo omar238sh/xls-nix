@@ -34,8 +34,9 @@
     },
     "root": {
       "inputs": {
+        "flake-utils": "flake-utils",
         "nixpkgs": "nixpkgs",
-        "xls-nix": "xls-nix"
+        "xls-src": "xls-src"
       }
     },
     "systems": {
@@ -50,28 +51,6 @@
       "original": {
         "owner": "nix-systems",
         "repo": "default",
-        "type": "github"
-      }
-    },
-    "xls-nix": {
-      "inputs": {
-        "flake-utils": "flake-utils",
-        "nixpkgs": [
-          "nixpkgs"
-        ],
-        "xls-src": "xls-src"
-      },
-      "locked": {
-        "lastModified": 1783508395,
-        "narHash": "sha256-XMqX6bl9Nl/C9CMleb0c4XvDG87SSMQle12iu3t87ks=",
-        "owner": "omar238sh",
-        "repo": "xls-nix",
-        "rev": "110c96bd9463700f3abc3a3f18e7e15381e79e0c",
-        "type": "github"
-      },
-      "original": {
-        "owner": "omar238sh",
-        "repo": "xls-nix",
         "type": "github"
       }
     },
