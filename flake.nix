@@ -16,6 +16,7 @@
     ];
   };
 
+
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     flake-utils.url = "github:numtide/flake-utils";
@@ -98,9 +99,17 @@
           version = "unstable-${xls-src.shortRev or "dirty"}";
           src = xls-src;
 
-          bazel = pkgs.bazel_7;
+          bazel = pkgs.bazel_8;
           bazelFlags = [ "-c" "opt" ];
           bazelTargets = [ "//xls/dslx/lsp:dslx_ls_main" ];
+
+          # The xls repo pins an exact Bazel version via .bazelversion; the
+          # wrapper tries to download that exact release, which fails
+          # offline inside the Nix sandbox. Drop the pin so it just uses
+          # whatever `bazel` (bazel_8 above) is on PATH.
+          postPatch = ''
+            rm -f .bazelversion
+          '';
 
           fetchAttrs = {
             sha256 = pkgs.lib.fakeSha256; # <-- replace after first run
@@ -124,7 +133,7 @@
         };
 
         devShellPkgs = with pkgs; [
-          bazel_7
+          bazel_8
           python3
           python3Packages.pip
           libtinfo
