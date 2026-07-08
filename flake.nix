@@ -58,12 +58,23 @@
         # Nix store path: cacheable via Cachix and consumable from other
         # flakes as `packages.dslx-lsp`.
         # -----------------------------------------------------------------
+
         xlsDslxLsp = pkgs.stdenv.mkDerivation {
           pname = "xls-dslx-lsp";
           version = "unstable-${xls-src.shortRev or "dirty"}";
           src = xls-src;
 
-          nativeBuildInputs = [ pkgs.bazel_8 pkgs.git pkgs.python3 pkgs.which pkgs.cacert ];
+          # ADDED: pkgs.xz, pkgs.unzip, pkgs.patch
+          nativeBuildInputs = [ 
+            pkgs.bazel_8 
+            pkgs.git 
+            pkgs.python3 
+            pkgs.which 
+            pkgs.cacert 
+            pkgs.xz 
+            pkgs.unzip 
+            pkgs.patch 
+          ];
           buildInputs = [ pkgs.zlib ];
 
           postPatch = ''
@@ -76,7 +87,6 @@
             export HOME="$TMPDIR"
             export SSL_CERT_FILE="${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt"
             export GIT_SSL_CAINFO="$SSL_CERT_FILE"
-            # FIX: Moved --output_user_root BEFORE the build subcommand
             bazel --output_user_root="$TMPDIR/bazel_output" build -c opt //xls/dslx/lsp:dslx_ls
             runHook postBuild
           '';
@@ -88,11 +98,6 @@
             runHook postInstall
           '';
 
-          # Fixed-output: Nix grants network access for the whole
-          # derivation (needed for Bazel's MODULE.bazel git/http fetches)
-          # in exchange for pinning the result's hash. As with the release
-          # tarball above: first build fails and prints the real hash —
-          # paste it in below.
           outputHashMode = "recursive";
           outputHashAlgo = "sha256";
           outputHash = pkgs.lib.fakeSha256; # <-- replace after first run
@@ -104,7 +109,7 @@
             platforms = [ "x86_64-linux" ];
           };
         };
-
+        
         # -----------------------------------------------------------------
         # A real, consumable package for the prebuilt release tools
         # (interpreter_main, ir_converter_main, opt_main, codegen_main,
