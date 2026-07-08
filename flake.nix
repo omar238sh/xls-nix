@@ -9,15 +9,12 @@
   #   3. nix build .# && cachix push <your-cache-name> ./result
   # Replace "your-cache-name" below once you have created your cache, then
   # `nix flake lock` / `nix build` will trust it automatically.
-  
-
   nixConfig = {
     extra-substituters = [ "https://omar238sh.org" ];
     extra-trusted-public-keys = [
       "omar238sh.cachix.org-1:QOVqP8RL66i+X8zvEM4pBlOZaoRoNzUt1hFYSvCgopI="
     ];
   };
-
   
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
@@ -119,10 +116,12 @@
 
           fetchAttrs = {
             sha256 = pkgs.lib.fakeSha256; # <-- replace after first run
+            nativeBuildInputs = [ pkgs.git ];
           };
 
           buildAttrs = {
             buildInputs = [ pkgs.python3 pkgs.zlib ];
+            nativeBuildInputs = [ pkgs.git ];
 
             installPhase = ''
               mkdir -p $out/bin
